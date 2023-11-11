@@ -6,6 +6,8 @@ from tensorflow import keras
 from keras import layers
 from keras.models import Sequential
 
+print(tf.config.list_physical_devices('GPU'))
+
 data_dir = 'C:/Users/Mikolaj/.keras/datasets/flower_photos'
 
 batch_size = 32
