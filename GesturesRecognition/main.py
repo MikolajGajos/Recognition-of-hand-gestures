@@ -24,13 +24,25 @@ IMG_SIZE = (img_width, img_height)
 splits = 3
 epochs = 2
 
-dataset = tf.keras.utils.image_dataset_from_directory(
+train_dataset = tf.keras.utils.image_dataset_from_directory(
     data_dir,
-    shuffle=True,
     image_size=(img_height, img_width),
-    batch_size=batch_size)
+    batch_size=batch_size,
+    validation_split=0.2,
+    subset="training",
+    seed=42
+)
 
-class_names = dataset.class_names
+test_dataset = tf.keras.utils.image_dataset_from_directory(
+    data_dir,
+    image_size=(img_height, img_width),
+    batch_size=batch_size,
+    validation_split=0.2,
+    subset="validation",
+    seed=42
+)
+
+class_names = train_dataset.class_names
 num_classes = len(class_names)
 
 
@@ -52,7 +64,7 @@ def create_model():
 
 X = []
 y = []
-for images, labels in dataset:
+for images, labels in train_dataset:
     X.append(images.numpy())
     y.append(labels.numpy())
 
@@ -114,7 +126,6 @@ for train_index, test_index in kf.split(X):
     plt.ylabel('Accuracy')
     plt.legend()
 
-plt.tight_layout()  # Adjust the layout to prevent overlap
 plt.show()
 
 expected_y = np.concatenate(expected_y)
