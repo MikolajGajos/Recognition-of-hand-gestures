@@ -2,19 +2,15 @@ import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 
-from tensorflow import keras
 from keras import layers
 from keras.models import Sequential
 
-import os
-import pandas as pd
 from sklearn import metrics
-from scipy.stats import zscore
 from sklearn.model_selection import KFold
 
 print(tf.config.list_physical_devices('GPU'))
 
-data_dir = 'C:/Users/Mikolaj/.keras/datasets/flower_photos'
+data_dir = 'C:/Users/Mikolaj/.keras/datasets/cats_and_dogs_filtered'
 
 batch_size = 32
 img_height = 160
@@ -22,7 +18,7 @@ img_width = 160
 IMG_SIZE = (img_width, img_height)
 
 splits = 3
-epochs = 2
+epochs = 6
 
 train_dataset = tf.keras.utils.image_dataset_from_directory(
     data_dir,
@@ -62,6 +58,15 @@ def create_model():
     return base_model
 
 
+X_test = []
+y_test = []
+for images, labels in test_dataset:
+    X_test.append(images.numpy())
+    y_test.append(labels.numpy())
+
+X_test = np.concatenate(X_test)
+y_test = np.concatenate(y_test)
+
 X = []
 y = []
 for images, labels in train_dataset:
@@ -70,16 +75,6 @@ for images, labels in train_dataset:
 
 X = np.concatenate(X)
 y = np.concatenate(y)
-
-# class_names = dataset.class_names
-#
-# plt.figure(figsize=(10, 10))
-# for i in range(9):
-#     ax = plt.subplot(3, 3, i + 1)
-#     plt.imshow(X[i].astype("uint8"))
-#     plt.title(class_names[y[i]])
-#
-# plt.show()
 
 predicted_y = []
 expected_y = []
@@ -90,8 +85,8 @@ fold = 0
 for train_index, test_index in kf.split(X):
     fold += 1
 
-    X_train, X_test = X[train_index], X[test_index]
-    y_train, y_test = y[train_index], y[test_index]
+    X_train, X_val = X[train_index], X[test_index]
+    y_train, y_val = y[train_index], y[test_index]
 
     model = create_model()
 
@@ -99,7 +94,7 @@ for train_index, test_index in kf.split(X):
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
     history = model.fit(X_train, y_train,
-                        validation_data=(X_test, y_test),
+                        validation_data=(X_val, y_val),
                         epochs=epochs)
 
     predictions = model.predict(X_test)
