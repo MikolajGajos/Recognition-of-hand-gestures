@@ -1,24 +1,23 @@
 import matplotlib.pyplot as plt
 import numpy as np
-import tensorflow as tf
+import os
 
+import tensorflow as tf
 from keras import layers
 from keras.models import Sequential
 
 from sklearn import metrics
 from sklearn.model_selection import KFold
 
-print(tf.config.list_physical_devices('GPU'))
-
-data_dir = 'C:/Users/Mikolaj/.keras/datasets/cats_and_dogs_filtered'
+data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kinect-ds/Dataset2")
 
 batch_size = 32
-img_height = 160
-img_width = 160
+img_height = 250
+img_width = 250
 IMG_SIZE = (img_width, img_height)
 
-splits = 3
-epochs = 6
+splits = 10
+epochs = 15
 
 train_dataset = tf.keras.utils.image_dataset_from_directory(
     data_dir,
@@ -113,7 +112,7 @@ for train_index, test_index in kf.split(X):
     loss = history.history['loss']
     val_loss = history.history['val_loss']
 
-    plt.subplot(1, 3, fold)
+    plt.subplot(1, splits, fold)
     plt.plot(epochs_range, acc, label='Training Accuracy', linestyle='--')
     plt.plot(epochs_range, val_acc, label='Validation Accuracy', linestyle='-')
     plt.title(f'Fold {fold}')
@@ -127,19 +126,3 @@ expected_y = np.concatenate(expected_y)
 predicted_y = np.concatenate(predicted_y)
 accuracy = metrics.accuracy_score(expected_y, predicted_y)
 print(f'Accuracy: {accuracy}')
-
-# image_path = "D:/sunflower.jpg"
-#
-# img = tf.keras.utils.load_img(
-#     image_path, target_size=(img_height, img_width)
-# )
-# img_array = tf.keras.utils.img_to_array(img)
-# img_array = tf.expand_dims(img_array, 0)  # Create a batch
-#
-# predictions = model.predict(img_array)
-# score = tf.nn.softmax(predictions[0])
-#
-# print(
-#     "This image most likely belongs to {} with a {:.2f} percent confidence."
-#     .format(class_names[np.argmax(score)], 100 * np.max(score))
-# )
