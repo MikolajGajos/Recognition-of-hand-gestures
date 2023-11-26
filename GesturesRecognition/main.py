@@ -9,15 +9,15 @@ from keras.models import Sequential
 from sklearn import metrics
 from sklearn.model_selection import KFold
 
-data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kinect-ds/Dataset2")
+data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kinect-ds/Dataset1")
 
 batch_size = 32
-img_height = 250
-img_width = 250
+img_height = 180
+img_width = 180
 IMG_SIZE = (img_width, img_height)
 
-splits = 10
-epochs = 15
+splits = 5
+epochs = 8
 
 train_dataset = tf.keras.utils.image_dataset_from_directory(
     data_dir,
@@ -43,7 +43,7 @@ num_classes = len(class_names)
 
 def create_model():
     base_model = Sequential([
-        layers.Rescaling(1./255),
+        layers.Rescaling(1. / 255),
         layers.Conv2D(16, 3, padding='same', activation='relu'),
         layers.MaxPooling2D(),
         layers.Conv2D(32, 3, padding='same', activation='relu'),
@@ -81,6 +81,10 @@ expected_y = []
 kf = KFold(n_splits=splits, shuffle=True, random_state=42)
 
 fold = 0
+max_accuracy = 0
+train_acc = []
+val_acc = []
+epochs_range = []
 for train_index, test_index in kf.split(X):
     fold += 1
 
@@ -104,25 +108,28 @@ for train_index, test_index in kf.split(X):
     predicted_y.append(predicted_labels)
     print(f'Accuracy: {accuracy}')
 
-    epochs_range = range(epochs)
+    if accuracy > max_accuracy:
+        max_accuracy = accuracy
+        model.save("models/model")
 
-    acc = history.history['accuracy']
-    val_acc = history.history['val_accuracy']
-
-    loss = history.history['loss']
-    val_loss = history.history['val_loss']
-
-    plt.subplot(1, splits, fold)
-    plt.plot(epochs_range, acc, label='Training Accuracy', linestyle='--')
-    plt.plot(epochs_range, val_acc, label='Validation Accuracy', linestyle='-')
-    plt.title(f'Fold {fold}')
-    plt.xlabel('Epochs')
-    plt.ylabel('Accuracy')
-    plt.legend()
-
-plt.show()
+    epochs_range.append(range(epochs))
+    train_acc.append(history.history['accuracy'])
+    val_acc.append(history.history['val_accuracy'])
 
 expected_y = np.concatenate(expected_y)
 predicted_y = np.concatenate(predicted_y)
 accuracy = metrics.accuracy_score(expected_y, predicted_y)
 print(f'Accuracy: {accuracy}')
+
+fig, axs = plt.subplots(nrows=1, ncols=splits, layout="constrained", sharey=True, figsize=(11, 5))
+i = 0
+for ax in axs.flat:
+    ax.plot(epochs_range[i], train_acc[i], label='Training Accuracy')
+    ax.plot(epochs_range[i], val_acc[i], label='Validation Accuracy')
+    ax.set_xlabel('Epoch')
+    ax.set_ylabel('Accuracy')
+    ax.set_title(f'Fold {i}')
+    ax.legend(loc='lower right')
+    i += 1
+
+plt.show()
