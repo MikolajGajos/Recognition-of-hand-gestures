@@ -86,9 +86,9 @@ for train_index, val_index in kf.split(images_train_val):
                         epochs=epochs)
 
     predictions = model.predict(images_test)
-    predicted_labels = np.argmax(predictions, axis=1)
+    predictions = np.argmax(predictions, axis=1)
 
-    test_accuracy = metrics.accuracy_score(labels_test, predicted_labels)
+    test_accuracy = metrics.accuracy_score(labels_test, predictions)
     folds_accuracy.append(test_accuracy)
 
     if test_accuracy > max_accuracy:
