@@ -17,9 +17,9 @@ img_width = 180
 IMG_SIZE = (img_width, img_height)
 
 splits = 5
-epochs = 8
+epochs = 20
 
-train_dataset = tf.keras.utils.image_dataset_from_directory(
+train_val_dataset = tf.keras.utils.image_dataset_from_directory(
     data_dir,
     image_size=(img_height, img_width),
     batch_size=batch_size,
@@ -27,6 +27,15 @@ train_dataset = tf.keras.utils.image_dataset_from_directory(
     subset="training",
     seed=42
 )
+images_train_val = []
+labels_train_val = []
+for images, labels in train_val_dataset:
+
+    images_train_val.append(images.numpy())
+    labels_train_val.append(labels.numpy())
+
+images_train_val = np.concatenate(images_train_val)
+labels_train_val = np.concatenate(labels_train_val)
 
 test_dataset = tf.keras.utils.image_dataset_from_directory(
     data_dir,
@@ -36,90 +45,62 @@ test_dataset = tf.keras.utils.image_dataset_from_directory(
     subset="validation",
     seed=42
 )
-
-class_names = train_dataset.class_names
-num_classes = len(class_names)
-
-
-def create_model():
-    base_model = Sequential([
-        layers.Rescaling(1. / 255),
-        layers.Conv2D(16, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(32, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Conv2D(64, 3, padding='same', activation='relu'),
-        layers.MaxPooling2D(),
-        layers.Flatten(),
-        layers.Dense(128, activation='relu'),
-        layers.Dense(num_classes, name="outputs")
-    ])
-    return base_model
-
-
-X_test = []
-y_test = []
+images_test = []
+labels_test = []
 for images, labels in test_dataset:
-    X_test.append(images.numpy())
-    y_test.append(labels.numpy())
+    images_test.append(images.numpy())
+    labels_test.append(labels.numpy())
 
-X_test = np.concatenate(X_test)
-y_test = np.concatenate(y_test)
-
-X = []
-y = []
-for images, labels in train_dataset:
-    X.append(images.numpy())
-    y.append(labels.numpy())
-
-X = np.concatenate(X)
-y = np.concatenate(y)
-
-predicted_y = []
-expected_y = []
+images_test = np.concatenate(images_test)
+labels_test = np.concatenate(labels_test)
 
 kf = KFold(n_splits=splits, shuffle=True, random_state=42)
 
-fold = 0
 max_accuracy = 0
 train_acc = []
 val_acc = []
 epochs_range = []
-for train_index, test_index in kf.split(X):
-    fold += 1
+folds_accuracy = []
+for train_index, val_index in kf.split(images_train_val):
 
-    X_train, X_val = X[train_index], X[test_index]
-    y_train, y_val = y[train_index], y[test_index]
+    images_train, images_val = images_train_val[train_index], images_train_val[val_index]
+    labels_train, labels_val = labels_train_val[train_index], labels_train_val[val_index]
 
-    model = create_model()
+    model = Sequential([
+            layers.Rescaling(1. / 255),
+            layers.Conv2D(16, 3, padding='same', activation='relu'),
+            layers.MaxPooling2D(),
+            layers.Conv2D(32, 3, padding='same', activation='relu'),
+            layers.MaxPooling2D(),
+            layers.Conv2D(64, 3, padding='same', activation='relu'),
+            layers.MaxPooling2D(),
+            layers.Flatten(),
+            layers.Dense(128, activation='relu'),
+            layers.Dense(len(train_val_dataset.class_names), name="outputs")])
 
     model.compile(optimizer='adam',
                   loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
                   metrics=['accuracy'])
-    history = model.fit(X_train, y_train,
-                        validation_data=(X_val, y_val),
+    history = model.fit(images_train, labels_train,
+                        validation_data=(images_val, labels_val),
                         epochs=epochs)
 
-    predictions = model.predict(X_test)
+    predictions = model.predict(images_test)
     predicted_labels = np.argmax(predictions, axis=1)
 
-    accuracy = metrics.accuracy_score(y_test, predicted_labels)
-    expected_y.append(y_test)
-    predicted_y.append(predicted_labels)
-    print(f'Accuracy: {accuracy}')
+    test_accuracy = metrics.accuracy_score(labels_test, predicted_labels)
+    folds_accuracy.append(test_accuracy)
 
-    if accuracy > max_accuracy:
-        max_accuracy = accuracy
-        model.save("models/model")
+    if test_accuracy > max_accuracy:
+        max_accuracy = test_accuracy
+        model.save("models/model_dataset1")
 
     epochs_range.append(range(epochs))
     train_acc.append(history.history['accuracy'])
     val_acc.append(history.history['val_accuracy'])
 
-expected_y = np.concatenate(expected_y)
-predicted_y = np.concatenate(predicted_y)
-accuracy = metrics.accuracy_score(expected_y, predicted_y)
-print(f'Accuracy: {accuracy}')
+for i in range(folds_accuracy.__len__()):
+    print(f'Fold {i} test accuracy: {folds_accuracy[i]}')
 
 fig, axs = plt.subplots(nrows=1, ncols=splits, layout="constrained", sharey=True, figsize=(11, 5))
 i = 0
