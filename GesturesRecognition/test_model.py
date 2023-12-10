@@ -44,9 +44,8 @@ for i in range(images_test.__len__()):
     new_row = np.concatenate((new_row, prediction))
     data = np.append(data, [new_row], axis=0)
 
-data = pd.DataFrame(data=data[1:, 1:],
-                    index=data[1:, 0],
-                    columns=data[0, 1:])
+data_frame = pd.DataFrame(data=data[1:, 1:],
+                          index=data[1:, 0],
+                          columns=data[0, 1:])
 
-data.to_excel("results.xlsx")
-
+data_frame.to_excel('excel_results/results.xlsx')
