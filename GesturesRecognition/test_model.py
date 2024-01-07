@@ -27,9 +27,10 @@ for images, labels in test_dataset:
 images_test = np.concatenate(images_test)
 labels_test = np.concatenate(labels_test)
 
-model = keras.models.load_model("models/model_softmax")
+model_name = 'model_softmax'
+model = keras.models.load_model(f"models/{model_name}")
 
-data = np.array([['', 'False/True', 'mu', 'valfa', 'c', 'fish', 'star', 'E', 'W', 'spir', 'T', 'P', 'fing', 'L']])
+data = np.array([['', 'False/True', 'mu', 'valfa', 'c', 'fish', 'star', 'E', 'W', 'spir', 'T', 'P', 'fing', 'h']])
 
 for i in range(images_test.__len__()):
     image_batch = tf.expand_dims(images_test[i], 0)
@@ -48,4 +49,4 @@ data_frame = pd.DataFrame(data=data[1:, 1:],
                           index=data[1:, 0],
                           columns=data[0, 1:])
 
-data_frame.to_excel('excel_results/results.xlsx')
+data_frame.to_excel(f'excel_results/{model_name}_results.xlsx')

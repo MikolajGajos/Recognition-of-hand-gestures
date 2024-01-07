@@ -9,8 +9,6 @@ from keras.models import Sequential
 from sklearn import metrics
 from sklearn.model_selection import KFold
 
-data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kinect-ds/Dataset1")
-
 batch_size = 32
 img_height = 180
 img_width = 180
@@ -18,6 +16,8 @@ IMG_SIZE = (img_width, img_height)
 
 splits = 5
 epochs = 20
+
+data_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "kinect-ds/Dataset2")
 
 train_val_dataset = tf.keras.utils.image_dataset_from_directory(
     data_dir,
@@ -27,6 +27,15 @@ train_val_dataset = tf.keras.utils.image_dataset_from_directory(
     subset="training",
     seed=42
 )
+test_dataset = tf.keras.utils.image_dataset_from_directory(
+    data_dir,
+    image_size=(img_height, img_width),
+    batch_size=batch_size,
+    validation_split=0.2,
+    subset="validation",
+    seed=42
+)
+
 images_train_val = []
 labels_train_val = []
 for images, labels in train_val_dataset:
@@ -37,14 +46,6 @@ for images, labels in train_val_dataset:
 images_train_val = np.concatenate(images_train_val)
 labels_train_val = np.concatenate(labels_train_val)
 
-test_dataset = tf.keras.utils.image_dataset_from_directory(
-    data_dir,
-    image_size=(img_height, img_width),
-    batch_size=batch_size,
-    validation_split=0.2,
-    subset="validation",
-    seed=42
-)
 images_test = []
 labels_test = []
 for images, labels in test_dataset:
@@ -54,13 +55,13 @@ for images, labels in test_dataset:
 images_test = np.concatenate(images_test)
 labels_test = np.concatenate(labels_test)
 
-kf = KFold(n_splits=splits, shuffle=True, random_state=42)
-
 max_accuracy = 0
 train_acc = []
 val_acc = []
 epochs_range = []
 folds_accuracy = []
+
+kf = KFold(n_splits=splits, shuffle=True, random_state=42)
 for train_index, val_index in kf.split(images_train_val):
 
     images_train, images_val = images_train_val[train_index], images_train_val[val_index]
@@ -93,7 +94,7 @@ for train_index, val_index in kf.split(images_train_val):
 
     if test_accuracy > max_accuracy:
         max_accuracy = test_accuracy
-        model.save("models/model_dataset1")
+        model.save("models/model_dataset2")
 
     epochs_range.append(range(epochs))
     train_acc.append(history.history['accuracy'])

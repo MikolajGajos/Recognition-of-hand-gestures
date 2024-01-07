@@ -28,15 +28,16 @@ for images, labels in test_dataset:
 images_test = np.concatenate(images_test)
 labels_test = np.concatenate(labels_test)
 
-model = keras.models.load_model("models/model_softmax")
+model_name = 'model_softmax'
+model = keras.models.load_model(f"models/{model_name}")
+
+names = ['mu', 'valfa', 'c', 'fish', 'star', 'E', 'W', 'spir', 'T', 'P', 'fing', 'h']
 
 predictions = model.predict(images_test)
 predictions = np.argmax(predictions, axis=1)
-
 confusion_matrix = sklearn.metrics.confusion_matrix(y_true=labels_test, y_pred=predictions)
-
-names = ['mu', 'valfa', 'c', 'fish', 'star', 'E', 'W', 'spir', 'T', 'P', 'fing', 'L']
 
 data_frame = pd.DataFrame(confusion_matrix, columns=names, index=names)
 print(data_frame)
-data_frame.to_excel('excel_results/confusion_matrix.xlsx')
+data_frame.to_excel(f'excel_results/{model_name}_confusion_matrix.xlsx')
+
